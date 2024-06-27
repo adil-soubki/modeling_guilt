@@ -10,14 +10,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler)
 from torch.utils.data.distributed import DistributedSampler
-
 from torch.utils.tensorboard import SummaryWriter
 
 from tqdm import tqdm, trange
 
-from transformers import (WEIGHTS_NAME, BertConfig,
-                          BertTokenizer)
-
+from transformers import BertConfig, BertTokenizer
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from models import BertForGuilt  # mean instead of cls
@@ -425,7 +422,12 @@ if args.do_eval and args.local_rank in [-1, 0]:
         checkpoints = [args.output_dir]
         if args.eval_all_checkpoints:
             checkpoints = list(
-                os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
+                os.path.dirname(c) for c in sorted(
+                    glob.glob(
+                        args.output_dir + '/**/' + 'model.safetensors', recursive=True
+                    )
+                )
+            )
             logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)  # Reduce logging
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         set_seed(args)
@@ -466,23 +468,24 @@ if args.do_eval and args.local_rank in [-1, 0]:
             results[split].update(result)
     print(json.dumps(results, sort_keys=True, indent=2))
 
-if args.do_train:
-    best = 1
-    best_step = None
-    best_token = None
-    best_all = None
-    for k, v in results[eval_split].items():
-        if v[0] < best:
-            best = v[0]
-            best_step = k
-            best_token = v[1]
+# XXX: This seems to be broken.
+#  if args.do_train:
+#      best = 1
+#      best_step = None
+#      best_token = None
+#      best_all = None
+#      for k, v in results[eval_split].items():
+#          if v[0] < best:
+#              best = v[0]
+#              best_step = k
+#              best_token = v[1]
 
-    print(best_step, best, best_token)
-    for checkpoint in checkpoints:
-        if checkpoint.endswith(best_step):
-            continue
-        else:
-            print('Deleting', checkpoint, os.system('rm -rf ' + checkpoint))
-    if best_step is not None:
-        with open(os.path.join(args.output_dir, 'final_result.txt'), 'w') as outfile:
-            outfile.write(f'{best_step}\t{best}\t{best_token}\n')
+#      print(best_step, best, best_token)
+#      for checkpoint in checkpoints:
+#          if checkpoint.endswith(best_step):
+#              continue
+#          else:
+#              print('Deleting', checkpoint, os.system('rm -rf ' + checkpoint))
+#      if best_step is not None:
+#          with open(os.path.join(args.output_dir, 'final_result.txt'), 'w') as outfile:
+#              outfile.write(f'{best_step}\t{best}\t{best_token}\n')

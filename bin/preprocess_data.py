@@ -52,7 +52,6 @@ def parse_highlight_strs(strings: list[str]) -> list[list[int]]:
     return list(map(str_to_int_list, strings))
 
 
-#  def preprocess_data(df: pd.DataFrame) -> list[dict[str, Any]]:
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     tokenizer = tf.AutoTokenizer.from_pretrained(
         "google-bert/bert-base-uncased",

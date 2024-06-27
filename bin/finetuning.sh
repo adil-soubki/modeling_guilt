@@ -4,6 +4,7 @@ python modeling/model/main.py \
     --data_dir ./data/splits/ \
     --model_name_or_path google-bert/bert-base-uncased \
     --cache_dir '' \
+    --token_cls \
     --num_train_epochs 5 \
     --token_cls \
     --do_lower_case \
