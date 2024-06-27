@@ -1,0 +1,12 @@
+python modeling/run_lm_finetuning.py \
+    --fp16 \
+    --output_dir ./uncased_model_100k/ \
+    --mlm \
+    --save_steps 5000 \
+    --max_steps 100000  \
+    --model_name_or_path bert-base-uncased \
+    --do_lower_case \
+    --warmup_steps 5000 \
+    --do_train \
+    --do_eval \
+    --eval_all_checkpoints

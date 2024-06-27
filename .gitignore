@@ -138,3 +138,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Ignore large data files.
+data/SuspectGuilt
+
+# Ignore model checkpoints.
+outputs/
+runs/

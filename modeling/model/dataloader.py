@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 
+import pandas as pd
 from torch.utils.data import (TensorDataset)
 
 from utils import *
@@ -138,49 +139,43 @@ class GuiltProcessor(DataProcessor):
     def get_train_examples(self, data_dir):
         """See base class."""
         return self._create_examples(
-            self._read_jsonl(os.path.join(data_dir, "train.jsonl")))
+            pd.read_json(os.path.join(data_dir, "train.jsonl"), lines=True)
+        )
 
     def get_dev_examples(self, data_dir):
         """See base class."""
         return self._create_examples(
-            self._read_jsonl(os.path.join(data_dir, "dev.jsonl")))
+            pd.read_json(os.path.join(data_dir, "dev.jsonl"), lines=True)
+        )
 
     def get_test_examples(self, data_dir):
         """See base class."""
         return self._create_examples(
-            self._read_jsonl(os.path.join(data_dir, "test.jsonl")))
+            pd.read_json(os.path.join(data_dir, "test.jsonl"), lines=True)
+        )
 
     def get_labels(self):
         """See base class."""
         return [0]
 
-    def _create_examples(self, lines):
+    def _create_examples(self, df: pd.DataFrame) -> list[InputExample]:
         """Creates examples for the training and dev sets."""
-        cc = 0
-        cnt = 0
         examples = []
-        for line in lines:
-            cnt += 1
-            guid = str(line["story_id"])
-            text_a = line["story_clean"]
-            data = line['data']
-
-            input_example = InputExample(guid=guid, text_a=text_a, text_b=None, author_belief=np.nanmean(
-                [v.get('author_belief', np.nan) for v in data.values()]), suspect_committedCrime=np.nanmean(
-                [v.get('suspect_committedCrime', np.nan) for v in data.values()]),
-                                         author_belief_hl=highlight_parser(text_a,
-                                                                           [v.get('author_belief_highlight') for v in
-                                                                            data.values()], self.tokenizer,
-                                                                           self.token_source),
-                                         suspect_committedCrime_hl=highlight_parser(text_a, [
-                                             v.get('suspect_committedCrime_highlight') for v in data.values()],
-                                                                                    self.tokenizer, self.token_source))
-
-            if self.training_head == 0 and not np.isnan(input_example.author_belief):
-                examples.append(input_example)
-            elif self.training_head == 1 and not np.isnan(input_example.suspect_committedCrime):
-                examples.append(input_example)
-        logger.info(f'Created {len(examples)}/{cnt} examples, {cc}')
+        for rec in df.to_dict("records"):
+            example = InputExample(
+                guid=str(rec["story_id"]),
+                text_a=rec["story_clean"],
+                text_b=None,
+                author_belief=rec["author_belief"],
+                author_belief_hl=rec["author_belief_highlight"],
+                suspect_committedCrime=rec["suspect_committedCrime"],
+                suspect_committedCrime_hl=rec["suspect_committedCrime_highlight"]
+            )
+            if self.training_head == 0 and not np.isnan(example.author_belief):
+                examples.append(example)
+            elif self.training_head == 1 and not np.isnan(example.suspect_committedCrime):
+                examples.append(example)
+        logger.info(f'Created {len(examples)}/{len(df)} examples')
         return examples
 
 
